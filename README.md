@@ -1,22 +1,10 @@
 # DeepSDF
 
-This is an implementation of the CVPR '19 paper "DeepSDF: Learning Continuous Signed Distance Functions for Shape Representation" by Park et al. See the paper [here][6]. 
+## How to clone and install dependencies (Ubuntu 22.04 LTS)
 
-[![DeepSDF Video](https://img.youtube.com/vi/LILRJzMQw5o/0.jpg)](https://www.youtube.com/watch?v=LILRJzMQw5o)
+* Use ```git clone --recurse-submodules git@github.com:tthies0/DeepSDF.git```
+* If you cloned it any other way, run: ```git submodule update --init --recursive``` inside the repo. This will make sure you have all dependencies ready.
 
-## Citing DeepSDF
-
-If you use DeepSDF in your research, please cite the
-[paper](http://openaccess.thecvf.com/content_CVPR_2019/html/Park_DeepSDF_Learning_Continuous_Signed_Distance_Functions_for_Shape_Representation_CVPR_2019_paper.html):
-```
-@InProceedings{Park_2019_CVPR,
-author = {Park, Jeong Joon and Florence, Peter and Straub, Julian and Newcombe, Richard and Lovegrove, Steven},
-title = {DeepSDF: Learning Continuous Signed Distance Functions for Shape Representation},
-booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-month = {June},
-year = {2019}
-}
-```
 
 ## File Organization
 
