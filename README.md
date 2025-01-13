@@ -2,9 +2,10 @@
 
 ## How to clone and install dependencies (Ubuntu 22.04 LTS)
 
-* Use ```git clone --recurse-submodules git@github.com:tthies0/DeepSDF.git```
-* If you cloned it any other way, run: ```git submodule update --init --recursive``` inside the repo. This will make sure you have all dependencies ready.
-
+* ```git clone git@github.com:tthies0/DeepSDF.git```
+* Run: ```git submodule update --init --recursive``` inside the repo. This will make sure you have all dependencies ready.
+* Run the set-me-up script: ```./setMeUp.sh```. You need root permissions for this. If you can't run it, make it executeable first: ```sudo chmod +x ./setMeUp.sh```
+* The file ```requirements.txt``` contains the python-environment from the lecture. You can use it as a lookup if you have missing dependencies. However, keep in mind that different GPUs and especially nvidia-runtimes need different versions for the torch pip-modules (see https://pytorch.org/get-started/locally/).
 
 ## File Organization
 
