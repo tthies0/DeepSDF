@@ -5,7 +5,7 @@ sudo apt install build-essential cmake libgl1-mesa-dev libglew-dev
 
 ROOT_DIR=$(pwd)
 THIRD_PARTY_DIR="$ROOT_DIR/third-party"
-DEPENDENCIES=("CL11" "eigen" "Pangolin")
+DEPENDENCIES=("CLI11" "eigen" "Pangolin")
 
 for dependency in "${DEPENDENCIES[@]}"; do
     DEP_DIR="$THIRD_PARTY_DIR/$dependency"
@@ -41,7 +41,7 @@ if [ -d "./build" ]; then
     echo "Cleaning existing build directory for $dependency"
     rm -rf "./build/*"  # Remove all files and subdirectories
 else
-    mkdir -p "$BUILD_DIR"
+    mkdir -p "./build"
 fi
 
 cd ./build
