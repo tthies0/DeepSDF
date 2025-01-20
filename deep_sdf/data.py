@@ -85,11 +85,16 @@ def remove_nans(tensor):
     return tensor[~tensor_nan, :]
 
 
-def read_sdf_samples_into_ram(filename):
+def read_sdf_samples_into_ram(filename, class_embedding=None):
     npz = np.load(filename)
     pos_tensor = torch.from_numpy(npz["pos"])
     neg_tensor = torch.from_numpy(npz["neg"])
 
+    if class_embedding is not None:
+        class_embed_tensor = torch.full((pos_tensor.shape[0], 1), class_embedding)
+        pos_tensor = torch.cat((pos_tensor, class_embed_tensor), dim=1)
+        class_embed_tensor = torch.full((neg_tensor.shape[0], 1), class_embedding)
+        neg_tensor = torch.cat((neg_tensor, class_embed_tensor), dim=1)
     return [pos_tensor, neg_tensor]
 
 
@@ -175,11 +180,7 @@ class SDFSamples(torch.utils.data.Dataset):
                 npz = np.load(filename)
                 pos_tensor = remove_nans(torch.from_numpy(npz["pos"]))
                 neg_tensor = remove_nans(torch.from_numpy(npz["neg"]))
-                
-                if self.use_class_embedding:
-                    pos_tensor = pos_tensor.append([self.class_embedding[classname]], axis = 1)
-                    neg_tensor = neg_tensor.append([self.class_embedding[classname]], axis = 1)
-                    
+                                
                 self.loaded_data.append(
                     [
                         pos_tensor[torch.randperm(pos_tensor.shape[0])],
@@ -195,8 +196,12 @@ class SDFSamples(torch.utils.data.Dataset):
             self.data_source, ws.sdf_samples_subdir, self.npyfiles[idx]
         )
         if self.load_ram:
+            npz = unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample)
+            if self.use_class_embedding:
+                class_embed_tensor = torch.full((npz.shape[0], 1), self.class_embedding[self.classnames[idx]])
+                npz = torch.cat((npz, class_embed_tensor), dim=1)
             return (
-                unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample),
+                npz,
                 idx,
             )
         else:
