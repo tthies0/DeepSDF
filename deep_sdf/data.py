@@ -33,6 +33,29 @@ def get_instance_filenames(data_source, split):
                     npzfiles += [instance_filename]
     return npzfiles
 
+def get_instance_classnames_filenames(data_source, split):
+    npzfiles = []
+    class_names = []
+    for dataset in split:
+        for class_name in split[dataset]:
+            for instance_name in split[dataset][class_name]:
+                instance_filename = os.path.join(
+                    dataset, class_name, instance_name + ".npz"
+                )
+                if not os.path.isfile(
+                    os.path.join(data_source, ws.sdf_samples_subdir, instance_filename)
+                ):
+                    # raise RuntimeError(
+                    #     'Requested non-existent file "' + instance_filename + "'"
+                    # )
+                    logging.warning(
+                        "Requested non-existent file '{}'".format(instance_filename)
+                    )
+                else:
+                    npzfiles += [instance_filename]
+                    class_names += [class_name]
+    return npzfiles, class_names
+
 
 class NoMeshFileError(RuntimeError):
     """Raised when a mesh file is not found in a shape directory"""
@@ -127,12 +150,15 @@ class SDFSamples(torch.utils.data.Dataset):
         load_ram=False,
         print_filename=False,
         num_files=1000000,
+        class_embedding = [],
+        use_class_embedding = False
     ):
         self.subsample = subsample
-
+        self.class_embedding = class_embedding
         self.data_source = data_source
-        self.npyfiles = get_instance_filenames(data_source, split)
-
+        self.npyfiles, self.classnames = get_instance_classnames_filenames(data_source, split)
+        self.use_class_embedding = use_class_embedding
+        
         logging.debug(
             "using "
             + str(len(self.npyfiles))
@@ -144,11 +170,16 @@ class SDFSamples(torch.utils.data.Dataset):
 
         if load_ram:
             self.loaded_data = []
-            for f in self.npyfiles:
+            for f, classname in zip(self.npyfiles, self.classnames):
                 filename = os.path.join(self.data_source, ws.sdf_samples_subdir, f)
                 npz = np.load(filename)
                 pos_tensor = remove_nans(torch.from_numpy(npz["pos"]))
                 neg_tensor = remove_nans(torch.from_numpy(npz["neg"]))
+                
+                if self.use_class_embedding:
+                    pos_tensor = pos_tensor.append([self.class_embedding[classname]], axis = 1)
+                    neg_tensor = neg_tensor.append([self.class_embedding[classname]], axis = 1)
+                    
                 self.loaded_data.append(
                     [
                         pos_tensor[torch.randperm(pos_tensor.shape[0])],
@@ -169,4 +200,8 @@ class SDFSamples(torch.utils.data.Dataset):
                 idx,
             )
         else:
-            return unpack_sdf_samples(filename, self.subsample), idx
+            npz = unpack_sdf_samples(filename, self.subsample)
+            if self.use_class_embedding:
+                class_embed_tensor = torch.full((npz.shape[0], 1), self.class_embedding[self.classnames[idx]])
+                npz = torch.cat((npz, class_embed_tensor), dim=1)
+            return npz, idx

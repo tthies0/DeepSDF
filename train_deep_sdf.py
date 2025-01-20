@@ -320,7 +320,8 @@ def main_function(experiment_directory, continue_from, batch_split):
     minT = -clamp_dist
     maxT = clamp_dist
     enforce_minmax = True
-
+    enable_class_embedding = specs["NetworkSpecs"]["class_embedding"]
+    
     do_code_regularization = get_spec_with_default(specs, "CodeRegularization", True)
     code_reg_lambda = get_spec_with_default(specs, "CodeRegularizationLambda", 1e-4)
 
@@ -340,7 +341,8 @@ def main_function(experiment_directory, continue_from, batch_split):
         train_split = json.load(f)
 
     sdf_dataset = deep_sdf.data.SDFSamples(
-        data_source, train_split, num_samp_per_scene, load_ram=False
+        data_source, train_split, num_samp_per_scene, load_ram=False, 
+        class_embedding=specs["ClassEmbedding"], use_class_embedding = enable_class_embedding
     )
 
     num_data_loader_threads = get_spec_with_default(specs, "DataLoaderThreads", 1)
@@ -460,20 +462,27 @@ def main_function(experiment_directory, continue_from, batch_split):
         adjust_learning_rate(lr_schedules, optimizer_all, epoch)
 
         for sdf_data, indices in sdf_loader:
-
             # Process the input data
-            sdf_data = sdf_data.reshape(-1, 4)
-
+            if enable_class_embedding:
+                sdf_data = sdf_data.reshape(-1, 5)
+            else:
+                sdf_data = sdf_data.reshape(-1, 4)
+                
             num_sdf_samples = sdf_data.shape[0]
 
             sdf_data.requires_grad = False
 
+
             xyz = sdf_data[:, 0:3]
             sdf_gt = sdf_data[:, 3].unsqueeze(1)
 
+            if enable_class_embedding:
+                class_embedding = sdf_data[:, 4].unsqueeze(1)
+                xyz = torch.cat((xyz, class_embedding), dim=1)
+                
             if enforce_minmax:
                 sdf_gt = torch.clamp(sdf_gt, minT, maxT)
-
+            #logging.info(xyz)
             xyz = torch.chunk(xyz, batch_split)
             indices = torch.chunk(
                 indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1),

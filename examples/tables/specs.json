@@ -14,7 +14,8 @@
     "xyz_in_all" : false,
     "use_tanh" : false,
     "latent_dropout" : false,
-    "weight_norm" : true
+    "weight_norm" : true,
+    "class_embedding" : true
     },
   "CodeLength" : 256,
   "NumEpochs" : 2001,
