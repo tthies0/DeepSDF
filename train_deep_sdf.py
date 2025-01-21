@@ -341,7 +341,7 @@ def main_function(experiment_directory, continue_from, batch_split):
         train_split = json.load(f)
 
     sdf_dataset = deep_sdf.data.SDFSamples(
-        data_source, train_split, num_samp_per_scene, load_ram=False, 
+        data_source, train_split, num_samp_per_scene, load_ram=True, 
         class_embedding=specs["ClassEmbedding"], use_class_embedding = enable_class_embedding
     )
 
@@ -464,7 +464,7 @@ def main_function(experiment_directory, continue_from, batch_split):
         for sdf_data, indices in sdf_loader:
             # Process the input data
             if enable_class_embedding:
-                sdf_data = sdf_data.reshape(-1, 5)
+                sdf_data = sdf_data.reshape(-1, 13)
             else:
                 sdf_data = sdf_data.reshape(-1, 4)
                 
@@ -477,7 +477,7 @@ def main_function(experiment_directory, continue_from, batch_split):
             sdf_gt = sdf_data[:, 3].unsqueeze(1)
 
             if enable_class_embedding:
-                class_embedding = sdf_data[:, 4].unsqueeze(1)
+                class_embedding = sdf_data[:, 4:14]
                 xyz = torch.cat((xyz, class_embedding), dim=1)
                 
             if enforce_minmax:

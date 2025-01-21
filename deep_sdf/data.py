@@ -91,10 +91,15 @@ def read_sdf_samples_into_ram(filename, class_embedding=None):
     neg_tensor = torch.from_numpy(npz["neg"])
 
     if class_embedding is not None:
-        class_embed_tensor = torch.full((pos_tensor.shape[0], 1), class_embedding)
-        pos_tensor = torch.cat((pos_tensor, class_embed_tensor), dim=1)
-        class_embed_tensor = torch.full((neg_tensor.shape[0], 1), class_embedding)
-        neg_tensor = torch.cat((neg_tensor, class_embed_tensor), dim=1)
+        class_index = class_embedding
+        one_hot_vector = torch.zeros((pos_tensor.shape[0], 9))
+        one_hot_vector[:, class_index] = 1
+        pos_tensor = torch.cat((pos_tensor, one_hot_vector), dim=1)
+
+        class_index = class_embedding
+        one_hot_vector = torch.zeros((neg_tensor.shape[0], 9))
+        one_hot_vector[:, class_index] = 1
+        neg_tensor = torch.cat((neg_tensor, one_hot_vector), dim=1)
     return [pos_tensor, neg_tensor]
 
 
@@ -198,8 +203,11 @@ class SDFSamples(torch.utils.data.Dataset):
         if self.load_ram:
             npz = unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample)
             if self.use_class_embedding:
-                class_embed_tensor = torch.full((npz.shape[0], 1), self.class_embedding[self.classnames[idx]])
-                npz = torch.cat((npz, class_embed_tensor), dim=1)
+                # One hot encoded class embedding
+                class_index = self.class_embedding[self.classnames[idx]]
+                one_hot_vector = torch.zeros((npz.shape[0], 9))
+                one_hot_vector[:, class_index] = 1
+                npz = torch.cat((npz, one_hot_vector), dim=1)
             return (
                 npz,
                 idx,
@@ -207,6 +215,8 @@ class SDFSamples(torch.utils.data.Dataset):
         else:
             npz = unpack_sdf_samples(filename, self.subsample)
             if self.use_class_embedding:
-                class_embed_tensor = torch.full((npz.shape[0], 1), self.class_embedding[self.classnames[idx]])
-                npz = torch.cat((npz, class_embed_tensor), dim=1)
+                class_index = self.class_embedding[self.classnames[idx]]
+                one_hot_vector = torch.zeros((npz.shape[0], 9))
+                one_hot_vector[:, class_index] = 1
+                npz = torch.cat((npz, one_hot_vector), dim=1)
             return npz, idx
