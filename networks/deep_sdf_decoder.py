@@ -28,7 +28,7 @@ class Decoder(nn.Module):
 
         self.input_coord_length = 3
         if class_embedding:
-            self.input_coord_length = 4
+            self.input_coord_length = 12
         
         dims = [latent_size + self.input_coord_length] + dims + [1]
 

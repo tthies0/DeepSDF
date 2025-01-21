@@ -47,10 +47,8 @@ def create_mesh(
     while head < num_samples:
         sample_subset = samples[head : min(head + max_batch, num_samples), 0:3].cuda()
         if class_embedding is not None:
-            class_index = class_embedding
-            one_hot_vector = torch.zeros((sample_subset.shape[0], 9)).cuda()
-            one_hot_vector[:, class_index] = 1
-            sample_subset = torch.cat((sample_subset, one_hot_vector), dim=1)
+            class_embedding_vec = class_embedding.repeat(sample_subset.shape[0], 1).cuda()
+            sample_subset = torch.cat((sample_subset, class_embedding_vec), dim=1)
 
         samples[head : min(head + max_batch, num_samples), 3] = (
             deep_sdf.utils.decode_sdf(decoder, latent_vec, sample_subset)
