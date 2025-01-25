@@ -19,6 +19,9 @@ class Decoder(nn.Module):
         xyz_in_all=None,
         use_tanh=False,
         latent_dropout=False,
+        use_transformers=False,
+        transformer_hidden_size=1024,
+        num_heads=16,
     ):
         super(Decoder, self).__init__()
 
@@ -38,11 +41,7 @@ class Decoder(nn.Module):
         self.weight_norm = weight_norm
 
         for layer in range(0, self.num_layers - 1):
-            setattr(
-                self,
-                "multi_head_attn" + str(layer),
-                nn.MultiheadAttention()
-            )
+
 
             if layer + 1 in latent_in:
                 out_dim = dims[layer + 1] - dims[0]
@@ -50,6 +49,16 @@ class Decoder(nn.Module):
                 out_dim = dims[layer + 1]
                 if self.xyz_in_all and layer != self.num_layers - 2:
                     out_dim -= 3
+
+            if (
+                (not weight_norm)
+                and self.norm_layers is not None
+                and layer in self.norm_layers
+            ):
+                setattr(self, "bn" + str(layer), nn.LayerNorm(out_dim))
+
+            if use_transformers and (layer+1)%2 == 0:
+                setattr(self, "transformer" + str(layer), TransformerLayer(dims[layer], out_dim, transformer_hidden_size, num_heads, dropout_prob))
 
             if weight_norm and layer in self.norm_layers:
                 setattr(
@@ -59,13 +68,6 @@ class Decoder(nn.Module):
                 )
             else:
                 setattr(self, "lin" + str(layer), nn.Linear(dims[layer], out_dim))
-
-            if (
-                (not weight_norm)
-                and self.norm_layers is not None
-                and layer in self.norm_layers
-            ):
-                setattr(self, "bn" + str(layer), nn.LayerNorm(out_dim))
 
         self.use_tanh = use_tanh
         if use_tanh:
@@ -88,12 +90,17 @@ class Decoder(nn.Module):
             x = input
 
         for layer in range(0, self.num_layers - 1):
-            lin = getattr(self, "lin" + str(layer))
+            lin = getattr(self, "lin" + str(layer), None)
+            transformer = getattr(self, "transformer" + str(layer), None)
+            assert lin is not None or transformer is not None
             if layer in self.latent_in:
                 x = torch.cat([x, input], 1)
             elif layer != 0 and self.xyz_in_all:
                 x = torch.cat([x, xyz], 1)
-            x = lin(x)
+            if lin is not None:
+                x = lin(x)
+            else:
+                x = transformer(x)
             # last layer Tanh
             if layer == self.num_layers - 2 and self.use_tanh:
                 x = self.tanh(x)
@@ -113,3 +120,33 @@ class Decoder(nn.Module):
             x = self.th(x)
 
         return x
+
+
+class TransformerLayer(nn.Module):
+    def __init__(
+            self,
+            input_dim,
+            output_dim,
+            hidden_layers,
+            num_heads,
+            dropout_prob=0.0,
+    ):
+        super(TransformerLayer, self).__init__()
+        self.attn = nn.MultiheadAttention(input_dim, num_heads, dropout=dropout_prob)
+        self.norm = nn.LayerNorm(input_dim)
+        self.ff = nn.Sequential(
+            nn.Linear(input_dim, hidden_layers),
+            nn.ReLU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(hidden_layers, output_dim)
+        )
+        self.norm2 = nn.LayerNorm(input_dim)
+
+    def forward(self, input):
+        x = input.unsqueeze(0) #Add fake sequence dim
+        attn_output, _ = self.attn(x, x, x)
+        x = self.norm(input+attn_output)
+        ff_output = self.ff(x)
+        x = self.norm2(x+ff_output)
+
+        return x.squeeze(0)
