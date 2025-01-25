@@ -307,6 +307,9 @@ int main(int argc, char** argv) {
 
   CLI11_PARSE(app, argc, argv);
 
+  vis = false;
+  save_ply = false;
+
   if (test_flag)
     variance = 0.05;
 
@@ -392,9 +395,6 @@ int main(int argc, char** argv) {
   glDisable(GL_POINT_SMOOTH);
   glDisable(GL_LINE_SMOOTH);
   glDisable(GL_POLYGON_SMOOTH);
-  glHint(GL_POINT_SMOOTH, GL_DONT_CARE);
-  glHint(GL_LINE_SMOOTH, GL_DONT_CARE);
-  glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE);
   glDisable(GL_MULTISAMPLE_ARB);
   glShadeModel(GL_FLAT);
 
