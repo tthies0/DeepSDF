@@ -23,7 +23,8 @@ def reconstruct(
     num_samples=30000,
     lr=5e-4,
     l2reg=False,
-    enable_class_embedding = False
+    enable_class_embedding = False,
+    class_embedding = None
 ):
     def adjust_learning_rate(
         initial_lr, optimizer, num_iterations, decreased_by, adjust_lr_every
@@ -55,10 +56,13 @@ def reconstruct(
         ).cuda()
         xyz = sdf_data[:, 0:3]
         sdf_gt = sdf_data[:, 3].unsqueeze(1)
-
-        if enable_class_embedding:
-            class_embedding = sdf_data[:, 4].unsqueeze(1)
-            xyz = torch.cat((xyz, class_embedding), dim=1)
+        if enable_class_embedding and (class_embedding is not None):
+            class_embedding_vec = class_embedding.repeat(xyz.shape[0], 1).cuda()
+            xyz = torch.cat((xyz, class_embedding_vec), dim=1)
+        elif enable_class_embedding:
+            class_embedding_vec = sdf_data[:, 4:14]
+          
+            xyz = torch.cat((xyz, class_embedding_vec), dim=1)
         sdf_gt = torch.clamp(sdf_gt, -clamp_dist, clamp_dist)
 
         adjust_learning_rate(lr, optimizer, e, decreased_by, adjust_lr_every)
@@ -143,7 +147,7 @@ if __name__ == "__main__":
     deep_sdf.add_common_args(arg_parser)
 
     args = arg_parser.parse_args()
-
+        
     deep_sdf.configure_logging(args)
 
     def empirical_stat(latent_vecs, indices):
@@ -163,6 +167,16 @@ if __name__ == "__main__":
 
     specs = json.load(open(specs_filename))
 
+    desired_embedding = None
+    if specs["NetworkSpecs"]["class_embedding"]:
+        try:
+            desired_embedding = torch.tensor(list(map(float, input("Enter relative embeddings (separated by \",\"): ").strip().split(','))), dtype=torch.float32)
+        except:
+            print("Invalid desired embedding provided!")
+            desired_embedding = None
+        else:
+            print("Valid input encoding: ", desired_embedding)
+            
     arch = __import__("networks." + specs["NetworkArch"], fromlist=["Decoder"])
 
     latent_size = specs["CodeLength"]
@@ -267,7 +281,8 @@ if __name__ == "__main__":
                 num_samples=8000,
                 lr=5e-3,
                 l2reg=True,
-                enable_class_embedding = specs["NetworkSpecs"]["class_embedding"]
+                enable_class_embedding = specs["NetworkSpecs"]["class_embedding"],
+                class_embedding=desired_embedding
             )
             logging.debug("reconstruct time: {}".format(time.time() - start))
             err_sum += err
@@ -284,9 +299,17 @@ if __name__ == "__main__":
             if not save_latvec_only:
                 start = time.time()
                 with torch.no_grad():
-                    deep_sdf.mesh.create_mesh(
-                        decoder, latent, mesh_filename, N=256, max_batch=int(2 ** 18), class_embedding=class_embedding
-                    )
+                    if desired_embedding is None:
+                        class_index = class_embedding
+                        one_hot_vector = torch.zeros((9))
+                        one_hot_vector[class_index] = 1
+                        deep_sdf.mesh.create_mesh(
+                            decoder, latent, mesh_filename, N=256, max_batch=int(2 ** 18), class_embedding=one_hot_vector
+                        )
+                    else:
+                        deep_sdf.mesh.create_mesh(
+                            decoder, latent, mesh_filename, N=256, max_batch=int(2 ** 18), class_embedding=desired_embedding
+                        )
                 logging.debug("total time: {}".format(time.time() - start))
 
             if not os.path.exists(os.path.dirname(latent_filename)):

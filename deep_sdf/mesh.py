@@ -12,7 +12,7 @@ import deep_sdf.utils
 
 
 def create_mesh(
-    decoder, latent_vec, filename, N=256, max_batch=32 ** 3, offset=None, scale=None
+    decoder, latent_vec, filename, N=256, max_batch=32 ** 3, offset=None, scale=None, class_embedding=None
 ):
     start = time.time()
     ply_filename = filename
@@ -46,6 +46,9 @@ def create_mesh(
 
     while head < num_samples:
         sample_subset = samples[head : min(head + max_batch, num_samples), 0:3].cuda()
+        if class_embedding is not None:
+            class_embedding_vec = class_embedding.repeat(sample_subset.shape[0], 1).cuda()
+            sample_subset = torch.cat((sample_subset, class_embedding_vec), dim=1)
 
         samples[head : min(head + max_batch, num_samples), 3] = (
             deep_sdf.utils.decode_sdf(decoder, latent_vec, sample_subset)
