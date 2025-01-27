@@ -21,7 +21,7 @@
     "dropout" : [0, 1, 2, 3, 4, 5],
     "dropout_prob" : 0.2,
     "norm_layers" : [0, 1, 2, 3, 4, 5],
-    "latent_in" : [3,5],
+    "latent_in" : [4],
     "xyz_in_all" : false,
     "use_tanh" : false,
     "latent_dropout" : false,

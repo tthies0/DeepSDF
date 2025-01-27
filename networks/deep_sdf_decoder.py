@@ -60,8 +60,9 @@ class Decoder(nn.Module):
             ):
                 setattr(self, "bn" + str(layer), nn.LayerNorm(out_dim))
 
-            if use_transformers and layer!=0:
-                setattr(self, "transformer" + str(layer), TransformerLayer(dims[layer], out_dim, transformer_hidden_size, num_heads, dropout_prob, weight_norm))
+            if use_transformers and layer!=0 and layer + 1 not in latent_in:
+                #Maybe training didnt work because of weight norm in feedforward
+                setattr(self, "transformer" + str(layer), TransformerLayer(dims[layer], out_dim, transformer_hidden_size, num_heads, dropout_prob, False))
                 continue
 
             if weight_norm and layer in self.norm_layers:
@@ -153,7 +154,7 @@ class TransformerLayer(nn.Module):
                 nn.Dropout(dropout_prob),
                 nn.Linear(hidden_layers, output_dim)
             )
-        self.norm2 = nn.LayerNorm(input_dim)
+        self.norm2 = nn.LayerNorm(output_dim)
 
     def forward(self, input):
         x = input.unsqueeze(0) #Add fake sequence dim

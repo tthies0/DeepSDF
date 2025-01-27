@@ -6,15 +6,17 @@
   "TestSplit" : "examples/splits/sv2_sofas_test.json",
   "NetworkArch" : "deep_sdf_decoder",
   "NetworkSpecs" : {
-    "dims" : [ 512, 512, 512, 512, 512, 512, 512, 512 ],
-    "dropout" : [0, 1, 2, 3, 4, 5, 6, 7],
+    "dims" : [ 256, 256, 512, 256, 512, 256],
+    "dropout" : [0, 1, 2, 3, 4, 5],
     "dropout_prob" : 0.2,
-    "norm_layers" : [0, 1, 2, 3, 4, 5, 6, 7],
+    "norm_layers" : [0, 1, 2, 3, 4, 5],
     "latent_in" : [4],
     "xyz_in_all" : false,
     "use_tanh" : false,
     "latent_dropout" : false,
-    "weight_norm" : true
+    "weight_norm" : true,
+    "class_embedding" : true,
+    "use_transformers" : true
     },
   "CodeLength" : 256,
   "NumEpochs" : 2001,
