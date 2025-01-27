@@ -160,6 +160,7 @@ class TransformerLayer(nn.Module):
         attn_output, _ = self.attn(x, x, x)
         x = self.norm(input+attn_output)
         ff_output = self.ff(x)
-        x = self.norm2(x+ff_output)
+        x = x[:, :, :ff_output.size(-1)] + ff_output
+        x = self.norm2(x)
 
         return x.squeeze(0)
