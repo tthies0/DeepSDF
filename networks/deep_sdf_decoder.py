@@ -60,7 +60,7 @@ class Decoder(nn.Module):
             ):
                 setattr(self, "bn" + str(layer), nn.LayerNorm(out_dim))
 
-            if use_transformers:
+            if use_transformers and layer!=0:
                 setattr(self, "transformer" + str(layer), TransformerLayer(dims[layer], out_dim, transformer_hidden_size, num_heads, dropout_prob, weight_norm))
                 continue
 

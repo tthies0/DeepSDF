@@ -96,7 +96,7 @@ if __name__ == "__main__":
         + "as well",
     )
     arg_parser.add_argument("--type", "-t", dest="type", default="loss")
-    arg_parser.add_argument("--file", "-f", dest="type", default=None)
+    arg_parser.add_argument("--file", "-f", dest="file", default=None)
 
     deep_sdf.add_common_args(arg_parser)
 

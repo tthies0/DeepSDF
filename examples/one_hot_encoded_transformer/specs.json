@@ -27,7 +27,7 @@
     "latent_dropout" : false,
     "weight_norm" : true,
     "class_embedding" : true,
-    "use_transformer" : true
+    "use_transformers" : true
     },
   "CodeLength" : 256,
   "NumEpochs" : 2000,
