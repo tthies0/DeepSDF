@@ -344,7 +344,7 @@ def main_function(experiment_directory, continue_from, batch_split):
         data_source, train_split, num_samp_per_scene, load_ram=True, 
         class_embedding=specs["ClassEmbedding"], use_class_embedding = enable_class_embedding
     )
-
+        
     num_data_loader_threads = get_spec_with_default(specs, "DataLoaderThreads", 1)
     logging.debug("loading data with {} threads".format(num_data_loader_threads))
 
@@ -354,6 +354,7 @@ def main_function(experiment_directory, continue_from, batch_split):
         shuffle=True,
         num_workers=num_data_loader_threads,
         drop_last=True,
+        pin_memory=False
     )
 
     logging.debug("torch num_threads: {}".format(torch.get_num_threads()))
@@ -461,6 +462,7 @@ def main_function(experiment_directory, continue_from, batch_split):
 
         adjust_learning_rate(lr_schedules, optimizer_all, epoch)
 
+        
         for sdf_data, indices in sdf_loader:
             # Process the input data
             if enable_class_embedding:
@@ -482,7 +484,7 @@ def main_function(experiment_directory, continue_from, batch_split):
                 
             if enforce_minmax:
                 sdf_gt = torch.clamp(sdf_gt, minT, maxT)
-            #logging.info(xyz)
+
             xyz = torch.chunk(xyz, batch_split)
             indices = torch.chunk(
                 indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1),
@@ -535,6 +537,7 @@ def main_function(experiment_directory, continue_from, batch_split):
 
         seconds_elapsed = end - start
         timing_log.append(seconds_elapsed)
+        logging.info(f"Time: {seconds_elapsed}s")
 
         lr_log.append([schedule.get_learning_rate(epoch) for schedule in lr_schedules])
 

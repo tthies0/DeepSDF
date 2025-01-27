@@ -1,0 +1,55 @@
+{
+  "Description" : "This experiment learns a shape representation",
+  "DataSource" : "data/actual_Shapenet",
+  "TrainSplit" : "examples/splits/combined/sv2_combined_medium.json",
+  "TestSplit" : "examples/splits/combined/sv2_combined_small_test.json",
+  "NetworkArch" : "deep_sdf_decoder",
+  "ClassEmbedding" : {
+    "02691156" : 0,
+    "02828884" : 1, 
+    "02958343" : 2,
+    "03001627" : 3, 
+    "03636649" : 4,
+    "04090263" : 5,
+    "04256520" : 6,
+    "04379243" : 7,
+    "04530566" : 8
+  },
+  "NetworkSpecs" : {
+    "dims" : [ 512, 512, 512, 512, 512, 512, 512, 512 ],
+    "dropout" : [0, 1, 2, 3, 4, 5, 6, 7],
+    "dropout_prob" : 0.2,
+    "norm_layers" : [0, 1, 2, 3, 4, 5, 6, 7],
+    "latent_in" : [4],
+    "xyz_in_all" : false,
+    "use_tanh" : false,
+    "latent_dropout" : false,
+    "weight_norm" : true,
+    "class_embedding" : false
+    },
+  "CodeLength" : 256,
+  "NumEpochs" : 2001,
+  "SnapshotFrequency" : 1000,
+  "AdditionalSnapshots" : [ 100, 500 ],
+  "LearningRateSchedule" : [
+    {
+      "Type" : "Step",
+      "Initial" : 0.0005,
+      "Interval" : 500,
+      "Factor" : 0.5
+    },
+    {
+      "Type" : "Step",
+      "Initial" : 0.001,
+      "Interval" : 500,
+      "Factor" : 0.5
+    }],
+  "SamplesPerScene" : 16384,
+  "ScenesPerBatch" : 32,
+  "DataLoaderThreads" : 16,
+  "ClampingDistance" : 0.1,
+  "CodeRegularization" : true,
+  "CodeRegularizationLambda" : 1e-4,
+  "CodeBound" : 1.0
+}
+

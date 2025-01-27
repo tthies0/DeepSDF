@@ -133,18 +133,11 @@ def unpack_sdf_samples_from_ram(data, subsample=None):
     # split the sample into half
     half = int(subsample / 2)
 
-    pos_size = pos_tensor.shape[0]
-    neg_size = neg_tensor.shape[0]
+    random_pos = (torch.rand(half) * pos_tensor.shape[0]).long()
+    random_neg = (torch.rand(half) * neg_tensor.shape[0]).long()
 
-    pos_start_ind = random.randint(0, pos_size - half)
-    sample_pos = pos_tensor[pos_start_ind : (pos_start_ind + half)]
-
-    if neg_size <= half:
-        random_neg = (torch.rand(half) * neg_tensor.shape[0]).long()
-        sample_neg = torch.index_select(neg_tensor, 0, random_neg)
-    else:
-        neg_start_ind = random.randint(0, neg_size - half)
-        sample_neg = neg_tensor[neg_start_ind : (neg_start_ind + half)]
+    sample_pos = torch.index_select(pos_tensor, 0, random_pos)
+    sample_neg = torch.index_select(neg_tensor, 0, random_neg)
 
     samples = torch.cat([sample_pos, sample_neg], 0)
 
@@ -169,7 +162,7 @@ class SDFSamples(torch.utils.data.Dataset):
         self.npyfiles, self.classnames = get_instance_classnames_filenames(data_source, split)
         self.use_class_embedding = use_class_embedding
         
-        logging.debug(
+        logging.info(
             "using "
             + str(len(self.npyfiles))
             + " shapes from data source "
@@ -180,7 +173,7 @@ class SDFSamples(torch.utils.data.Dataset):
 
         if load_ram:
             self.loaded_data = []
-            for f, classname in zip(self.npyfiles, self.classnames):
+            for f in self.npyfiles:
                 filename = os.path.join(self.data_source, ws.sdf_samples_subdir, f)
                 npz = np.load(filename)
                 pos_tensor = remove_nans(torch.from_numpy(npz["pos"]))
