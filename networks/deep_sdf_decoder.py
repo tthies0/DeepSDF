@@ -20,8 +20,8 @@ class Decoder(nn.Module):
         use_tanh=False,
         latent_dropout=False,
         use_transformers=False,
-        transformer_hidden_size=1024,
-        num_heads=16,
+        transformer_hidden_size=512,
+        num_heads=8,
     ):
         super(Decoder, self).__init__()
 
@@ -42,7 +42,6 @@ class Decoder(nn.Module):
 
         for layer in range(0, self.num_layers - 1):
 
-
             if layer + 1 in latent_in:
                 out_dim = dims[layer + 1] - dims[0]
             else:
@@ -57,8 +56,9 @@ class Decoder(nn.Module):
             ):
                 setattr(self, "bn" + str(layer), nn.LayerNorm(out_dim))
 
-            if use_transformers and (layer+1)%2 == 0:
-                setattr(self, "transformer" + str(layer), TransformerLayer(dims[layer], out_dim, transformer_hidden_size, num_heads, dropout_prob))
+            if use_transformers:
+                setattr(self, "transformer" + str(layer), TransformerLayer(dims[layer], out_dim, transformer_hidden_size, num_heads, dropout_prob, weight_norm))
+                continue
 
             if weight_norm and layer in self.norm_layers:
                 setattr(
@@ -130,16 +130,25 @@ class TransformerLayer(nn.Module):
             hidden_layers,
             num_heads,
             dropout_prob=0.0,
+            weight_norm=False
     ):
         super(TransformerLayer, self).__init__()
         self.attn = nn.MultiheadAttention(input_dim, num_heads, dropout=dropout_prob)
         self.norm = nn.LayerNorm(input_dim)
-        self.ff = nn.Sequential(
-            nn.Linear(input_dim, hidden_layers),
-            nn.ReLU(),
-            nn.Dropout(dropout_prob),
-            nn.Linear(hidden_layers, output_dim)
-        )
+        if weight_norm:
+            self.ff = nn.Sequential(
+                nn.utils.weight_norm(nn.Linear(input_dim, hidden_layers)),
+                nn.ReLU(),
+                nn.Dropout(dropout_prob),
+                nn.utils.weight_norm(nn.Linear(hidden_layers, output_dim))
+            )
+        else:
+            self.ff = nn.Sequential(
+                nn.Linear(input_dim, hidden_layers),
+                nn.ReLU(),
+                nn.Dropout(dropout_prob),
+                nn.Linear(hidden_layers, output_dim)
+            )
         self.norm2 = nn.LayerNorm(input_dim)
 
     def forward(self, input):

@@ -15,7 +15,7 @@ def running_mean(x, N):
     return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 
-def load_logs(experiment_directory, type):
+def load_logs(experiment_directory : str, type : str, file):
 
     logs = torch.load(os.path.join(experiment_directory, ws.logs_filename))
 
@@ -76,6 +76,8 @@ def load_logs(experiment_directory, type):
         raise Exception('unrecognized plot type "{}"'.format(type))
 
     ax.grid()
+    if file is not None:
+        plt.savefig(file)
     plt.show()
 
 
@@ -94,6 +96,7 @@ if __name__ == "__main__":
         + "as well",
     )
     arg_parser.add_argument("--type", "-t", dest="type", default="loss")
+    arg_parser.add_argument("--file", "-f", dest="type", default=None)
 
     deep_sdf.add_common_args(arg_parser)
 
@@ -101,4 +104,4 @@ if __name__ == "__main__":
 
     deep_sdf.configure_logging(args)
 
-    load_logs(args.experiment_directory, args.type)
+    load_logs(args.experiment_directory, args.type, args.file)
