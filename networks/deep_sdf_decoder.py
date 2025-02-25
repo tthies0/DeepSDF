@@ -46,6 +46,12 @@ class Decoder(nn.Module):
         self.weight_norm = weight_norm
 
         for layer in range(0, self.num_layers - 1):
+            setattr(
+                self,
+                "multi_head_attn" + str(layer),
+                nn.MultiheadAttention()
+            )
+
             if layer + 1 in latent_in:
                 out_dim = dims[layer + 1] - dims[0]
             else:
