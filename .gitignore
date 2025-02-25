@@ -1,2 +1,8 @@
-venv
-.idea
+build/
+__pycache__/
+bin/
+data/
+*.ply
+*.pth
+Shape_Comparison/
+*.pdf

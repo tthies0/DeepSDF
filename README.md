@@ -1,23 +1,29 @@
-# DeepSDF
+# Generalized DeepSDF
+#### Daniel Ostermeier, Cem Gunes, Leonie Wargitsch, Torben Thies
+The following paragraph contains some information about the structure of our code.
+## How to clone and install dependencies (Ubuntu 22.04 LTS)
 
-This is an implementation of the CVPR '19 paper "DeepSDF: Learning Continuous Signed Distance Functions for Shape Representation" by Park et al. See the paper [here][6]. 
+* ```git clone git@github.com:tthies0/DeepSDF.git```
+* Run: ```git submodule update --init --recursive``` inside the repo. This will make sure you have all dependencies ready.
+* Run the set-me-up script: ```./setMeUp.sh```. You need root permissions for this. If you can't run it, make it executeable first: ```sudo chmod +x ./setMeUp.sh```
+* The file ```requirements.txt``` contains the python-environment from the lecture. You can use it as a lookup if you have missing dependencies. However, keep in mind that different GPUs and especially nvidia-runtimes need different versions for the torch pip-modules (see https://pytorch.org/get-started/locally/).
 
-[![DeepSDF Video](https://img.youtube.com/vi/LILRJzMQw5o/0.jpg)](https://www.youtube.com/watch?v=LILRJzMQw5o)
+## Training
+Training is conducted via one of the experiment specifications within the "examples" folder.
+"examples/splits" hereby contains different test/training splits for ShapeNetV2.
+Within the respective specs.json file one can then specify which architecture one wants to train, i.e., one-hot encoded feature embeddings, transformers, or some mixture.
+Please refer to the notes on the original training script (next main-paragraph) for more information/examples.
 
-## Citing DeepSDF
+## Reconstruction
+There exist three reconstruct_*.py file within the main path: 
+* reconstruct_original.py: Reconstructions with the original architectures single value (uniform step-size [0;1]) class embeddings
+* reconstruct_one_hot.py: Reconstructions using the one-hot class embedding vector. One can specify a desired class embedding or leave it empty to extract it from the datapath
+* reconstruct_latent_interpolation.py: Given two existing latent code vectors this script can perform linear interpolation to obtain new shapes in the continuous latent space "between" them
 
-If you use DeepSDF in your research, please cite the
-[paper](http://openaccess.thecvf.com/content_CVPR_2019/html/Park_DeepSDF_Learning_Continuous_Signed_Distance_Functions_for_Shape_Representation_CVPR_2019_paper.html):
-```
-@InProceedings{Park_2019_CVPR,
-author = {Park, Jeong Joon and Florence, Peter and Straub, Julian and Newcombe, Richard and Lovegrove, Steven},
-title = {DeepSDF: Learning Continuous Signed Distance Functions for Shape Representation},
-booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-month = {June},
-year = {2019}
-}
-```
+## Other Utility Scripts
+Within the folder script/ there are some utility scripts we used to obain the split.json files, plot Chamfer distances or create partial SDF observations
 
+# Notes from the original authors of DeepSDF:
 ## File Organization
 
 The various Python scripts assume a shared organizational structure such that the output from one script can easily be used as input to another. This is true for both preprocessed data as well as experiments which make use of the datasets.
@@ -141,9 +147,6 @@ python reconstruct.py -e <experiment_directory>
 
 This will use the latest model parameters to reconstruct all the meshes in the split. To specify a particular checkpoint to use for reconstruction, use the ```--checkpoint``` flag followed by the epoch number. Generally, test SDF sampling strategy and regularization could affect the quality of the test reconstructions. For example, sampling aggressively near the surface could provide accurate surface details but might leave under-sampled space unconstrained, and using high L2 regularization coefficient could result in perceptually better but quantitatively worse test reconstructions.
 
-### Shape Completion
-
-The current release does not include code for shape completion. Please check back later!
 
 ### Evaluating Reconstructions
 

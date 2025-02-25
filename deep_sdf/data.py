@@ -29,8 +29,32 @@ def get_instance_filenames(data_source, split):
                     logging.warning(
                         "Requested non-existent file '{}'".format(instance_filename)
                     )
-                npzfiles += [instance_filename]
+                else:
+                    npzfiles += [instance_filename]
     return npzfiles
+
+def get_instance_classnames_filenames(data_source, split):
+    npzfiles = []
+    class_names = []
+    for dataset in split:
+        for class_name in split[dataset]:
+            for instance_name in split[dataset][class_name]:
+                instance_filename = os.path.join(
+                    dataset, class_name, instance_name + ".npz"
+                )
+                if not os.path.isfile(
+                    os.path.join(data_source, ws.sdf_samples_subdir, instance_filename)
+                ):
+                    # raise RuntimeError(
+                    #     'Requested non-existent file "' + instance_filename + "'"
+                    # )
+                    logging.warning(
+                        "Requested non-existent file '{}'".format(instance_filename)
+                    )
+                else:
+                    npzfiles += [instance_filename]
+                    class_names += [class_name]
+    return npzfiles, class_names
 
 
 class NoMeshFileError(RuntimeError):
@@ -61,11 +85,21 @@ def remove_nans(tensor):
     return tensor[~tensor_nan, :]
 
 
-def read_sdf_samples_into_ram(filename):
+def read_sdf_samples_into_ram(filename, class_embedding=None):
     npz = np.load(filename)
     pos_tensor = torch.from_numpy(npz["pos"])
     neg_tensor = torch.from_numpy(npz["neg"])
 
+    if class_embedding is not None:
+        class_index = class_embedding
+        one_hot_vector = torch.zeros((pos_tensor.shape[0], 9))
+        one_hot_vector[:, class_index] = 1
+        pos_tensor = torch.cat((pos_tensor, one_hot_vector), dim=1)
+
+        class_index = class_embedding
+        one_hot_vector = torch.zeros((neg_tensor.shape[0], 9))
+        one_hot_vector[:, class_index] = 1
+        neg_tensor = torch.cat((neg_tensor, one_hot_vector), dim=1)
     return [pos_tensor, neg_tensor]
 
 
@@ -99,18 +133,11 @@ def unpack_sdf_samples_from_ram(data, subsample=None):
     # split the sample into half
     half = int(subsample / 2)
 
-    pos_size = pos_tensor.shape[0]
-    neg_size = neg_tensor.shape[0]
+    random_pos = (torch.rand(half) * pos_tensor.shape[0]).long()
+    random_neg = (torch.rand(half) * neg_tensor.shape[0]).long()
 
-    pos_start_ind = random.randint(0, pos_size - half)
-    sample_pos = pos_tensor[pos_start_ind : (pos_start_ind + half)]
-
-    if neg_size <= half:
-        random_neg = (torch.rand(half) * neg_tensor.shape[0]).long()
-        sample_neg = torch.index_select(neg_tensor, 0, random_neg)
-    else:
-        neg_start_ind = random.randint(0, neg_size - half)
-        sample_neg = neg_tensor[neg_start_ind : (neg_start_ind + half)]
+    sample_pos = torch.index_select(pos_tensor, 0, random_pos)
+    sample_neg = torch.index_select(neg_tensor, 0, random_neg)
 
     samples = torch.cat([sample_pos, sample_neg], 0)
 
@@ -126,13 +153,16 @@ class SDFSamples(torch.utils.data.Dataset):
         load_ram=False,
         print_filename=False,
         num_files=1000000,
+        class_embedding = [],
+        use_class_embedding = False
     ):
         self.subsample = subsample
-
+        self.class_embedding = class_embedding
         self.data_source = data_source
-        self.npyfiles = get_instance_filenames(data_source, split)
-
-        logging.debug(
+        self.npyfiles, self.classnames = get_instance_classnames_filenames(data_source, split)
+        self.use_class_embedding = use_class_embedding
+        
+        logging.info(
             "using "
             + str(len(self.npyfiles))
             + " shapes from data source "
@@ -148,6 +178,7 @@ class SDFSamples(torch.utils.data.Dataset):
                 npz = np.load(filename)
                 pos_tensor = remove_nans(torch.from_numpy(npz["pos"]))
                 neg_tensor = remove_nans(torch.from_numpy(npz["neg"]))
+                                
                 self.loaded_data.append(
                     [
                         pos_tensor[torch.randperm(pos_tensor.shape[0])],
@@ -163,9 +194,22 @@ class SDFSamples(torch.utils.data.Dataset):
             self.data_source, ws.sdf_samples_subdir, self.npyfiles[idx]
         )
         if self.load_ram:
+            npz = unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample)
+            if self.use_class_embedding:
+                # One hot encoded class embedding
+                class_index = self.class_embedding[self.classnames[idx]]
+                one_hot_vector = torch.zeros((npz.shape[0], 9))
+                one_hot_vector[:, class_index] = 1
+                npz = torch.cat((npz, one_hot_vector), dim=1)
             return (
-                unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample),
+                npz,
                 idx,
             )
         else:
-            return unpack_sdf_samples(filename, self.subsample), idx
+            npz = unpack_sdf_samples(filename, self.subsample)
+            if self.use_class_embedding:
+                class_index = self.class_embedding[self.classnames[idx]]
+                one_hot_vector = torch.zeros((npz.shape[0], 9))
+                one_hot_vector[:, class_index] = 1
+                npz = torch.cat((npz, one_hot_vector), dim=1)
+            return npz, idx

@@ -1,3 +1,15 @@
 [submodule "third-party/cnpy"]
 	path = third-party/cnpy
 	url = https://github.com/rogersce/cnpy.git
+[submodule "third-party/CLI11"]
+	path = third-party/CLI11
+	url = git@github.com:CLIUtils/CLI11.git
+[submodule "third-party/Pangolin"]
+	path = third-party/Pangolin
+	url = git@github.com:stevenlovegrove/Pangolin.git
+[submodule "third-party/nanoflann"]
+	path = third-party/nanoflann
+	url = git@github.com:jlblancoc/nanoflann.git
+[submodule "third-party/eigen"]
+	path = third-party/eigen
+	url = https://gitlab.com/libeigen/eigen.git

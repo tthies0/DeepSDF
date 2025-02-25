@@ -23,6 +23,7 @@ def reconstruct(
     num_samples=30000,
     lr=5e-4,
     l2reg=False,
+    enable_class_embedding = False
 ):
     def adjust_learning_rate(
         initial_lr, optimizer, num_iterations, decreased_by, adjust_lr_every
@@ -55,6 +56,9 @@ def reconstruct(
         xyz = sdf_data[:, 0:3]
         sdf_gt = sdf_data[:, 3].unsqueeze(1)
 
+        if enable_class_embedding:
+            class_embedding = sdf_data[:, 4].unsqueeze(1)
+            xyz = torch.cat((xyz, class_embedding), dim=1)
         sdf_gt = torch.clamp(sdf_gt, -clamp_dist, clamp_dist)
 
         adjust_learning_rate(lr, optimizer, e, decreased_by, adjust_lr_every)
@@ -181,9 +185,9 @@ if __name__ == "__main__":
     with open(args.split_filename, "r") as f:
         split = json.load(f)
 
-    npz_filenames = deep_sdf.data.get_instance_filenames(args.data_source, split)
+    npz_filenames, class_names = deep_sdf.data.get_instance_classnames_filenames(args.data_source, split)
 
-    random.shuffle(npz_filenames)
+    #random.shuffle(npz_filenames)
 
     logging.debug(decoder)
 
@@ -220,7 +224,10 @@ if __name__ == "__main__":
 
         logging.debug("loading {}".format(npz))
 
-        data_sdf = deep_sdf.data.read_sdf_samples_into_ram(full_filename)
+        class_embedding = None
+        if specs["NetworkSpecs"]["class_embedding"]:
+            class_embedding = specs["ClassEmbedding"][class_names[ii]]
+        data_sdf = deep_sdf.data.read_sdf_samples_into_ram(full_filename, class_embedding)
 
         for k in range(repeat):
 
@@ -260,6 +267,7 @@ if __name__ == "__main__":
                 num_samples=8000,
                 lr=5e-3,
                 l2reg=True,
+                enable_class_embedding = specs["NetworkSpecs"]["class_embedding"]
             )
             logging.debug("reconstruct time: {}".format(time.time() - start))
             err_sum += err
@@ -277,7 +285,7 @@ if __name__ == "__main__":
                 start = time.time()
                 with torch.no_grad():
                     deep_sdf.mesh.create_mesh(
-                        decoder, latent, mesh_filename, N=256, max_batch=int(2 ** 18)
+                        decoder, latent, mesh_filename, N=256, max_batch=int(2 ** 18), class_embedding=class_embedding
                     )
                 logging.debug("total time: {}".format(time.time() - start))
 
