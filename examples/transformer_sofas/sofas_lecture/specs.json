@@ -1,6 +1,6 @@
 {
   "Description" : "This experiment learns a shape representation for sofas ",
-  "DataSource" : "data/testdata",
+  "DataSource" : "/app/DeepSDF/data",
   "TrainSplit" : "examples/splits/sv2_sofas_train_lecture.json",
   "TestSplit" : "examples/splits/sv2_sofas_test_lecture.json",
   "NetworkArch" : "deep_sdf_decoder",
@@ -13,11 +13,10 @@
     "xyz_in_all" : false,
     "use_tanh" : false,
     "latent_dropout" : false,
-    "weight_norm" : true,
-    "class_embedding" : false
+    "weight_norm" : true
     },
   "CodeLength" : 256,
-  "NumEpochs" : 2001,
+  "NumEpochs" : 2500,
   "SnapshotFrequency" : 1000,
   "AdditionalSnapshots" : [ 100, 500 ],
   "LearningRateSchedule" : [
@@ -34,8 +33,8 @@
       "Factor" : 0.5
     }],
   "SamplesPerScene" : 16384,
-  "ScenesPerBatch" : 32,
-  "DataLoaderThreads" : 16,
+  "ScenesPerBatch" : 128,
+  "DataLoaderThreads" : 32,
   "ClampingDistance" : 0.1,
   "CodeRegularization" : true,
   "CodeRegularizationLambda" : 1e-4,

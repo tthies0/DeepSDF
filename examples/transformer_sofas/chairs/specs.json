@@ -1,8 +1,9 @@
 {
-  "Description" : "This experiment learns a shape representation for sofas ",
-  "DataSource" : "data/testdata",
-  "TrainSplit" : "examples/splits/sv2_sofas_train_lecture.json",
-  "TestSplit" : "examples/splits/sv2_sofas_test_lecture.json",
+  "Description" : [ "This experiment learns a shape representation for chairs ",
+                    "using data from ShapeNet version 2." ],
+  "DataSource" : "data",
+  "TrainSplit" : "examples/splits/sv2_chairs_train.json",
+  "TestSplit" : "examples/splits/sv2_chairs_test.json",
   "NetworkArch" : "deep_sdf_decoder",
   "NetworkSpecs" : {
     "dims" : [ 512, 512, 512, 512, 512, 512, 512, 512 ],
@@ -13,8 +14,7 @@
     "xyz_in_all" : false,
     "use_tanh" : false,
     "latent_dropout" : false,
-    "weight_norm" : true,
-    "class_embedding" : false
+    "weight_norm" : true
     },
   "CodeLength" : 256,
   "NumEpochs" : 2001,
@@ -34,7 +34,7 @@
       "Factor" : 0.5
     }],
   "SamplesPerScene" : 16384,
-  "ScenesPerBatch" : 32,
+  "ScenesPerBatch" : 64,
   "DataLoaderThreads" : 16,
   "ClampingDistance" : 0.1,
   "CodeRegularization" : true,
