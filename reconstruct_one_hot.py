@@ -61,8 +61,8 @@ def reconstruct(
             xyz = torch.cat((xyz, class_embedding_vec), dim=1)
         elif enable_class_embedding:
             class_embedding_vec = sdf_data[:, 4:14]
-          
             xyz = torch.cat((xyz, class_embedding_vec), dim=1)
+            
         sdf_gt = torch.clamp(sdf_gt, -clamp_dist, clamp_dist)
 
         adjust_learning_rate(lr, optimizer, e, decreased_by, adjust_lr_every)
@@ -171,11 +171,10 @@ if __name__ == "__main__":
     if specs["NetworkSpecs"]["class_embedding"]:
         try:
             desired_embedding = torch.tensor(list(map(float, input("Enter relative embeddings (separated by \",\"): ").strip().split(','))), dtype=torch.float32)
+            print("Valid input encoding: ", desired_embedding)
         except:
             print("Invalid desired embedding provided!")
             desired_embedding = None
-        else:
-            print("Valid input encoding: ", desired_embedding)
             
     arch = __import__("networks." + specs["NetworkArch"], fromlist=["Decoder"])
 
